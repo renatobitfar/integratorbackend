@@ -1,0 +1,18 @@
+{
+    "app":{
+        "database":{
+            "host": "10.5.0.5",
+            "port": 3306,
+            "dbName": "dbcastminas",
+            "user": "castadmin",
+            "password": "teste123"
+        },
+        "SECRET":{
+            "keyAcs":"c@5tm1n@s2023"            
+        },
+        "SSL":{
+            "cert":"./certf/code.crt",
+            "key":"./certf/code.key"
+        }
+    }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "integratorbackend",
+  "version": "1.0.0",
+  "description": "project to integration data to clients from database bitfar\r # test",
+  "main": "server.js",
+  "scripts": {
+    "prod": "NODE_ENV=production nodemon server/server.js ",
+    "start": "nodemon server/server.js ",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Renato Soares",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.6.7",
+    "body-parser": "^1.20.2",
+    "config": "^3.3.11",
+    "cors": "^2.8.5",
+    "express": "^4.18.3",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.9.2",
+    "sequelize": "^6.37.1",
+    "tedious": "^17.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
