@@ -29,12 +29,12 @@ app.get('/test', function (req, res) {
     
     try {
 
-        // const CategoryController = require('./controller/categoryController');
-        // const category = new CategoryController();
-        // const newCats = await category.getCategory();
-        // await category.create(newCats,function(res){
-        //     console.log(res);
-        // });
+        const CategoryController = require('./controller/categoryController');
+        const category = new CategoryController();
+        const newCats = await category.getCategory();
+        await category.create(newCats,function(res){
+            console.log(res);
+        });
 
         // const ClassificationController = require('./controller/classificationController');
         // const classification = new ClassificationController();
@@ -127,12 +127,12 @@ app.get('/test', function (req, res) {
         //     console.log(res);
         // });
 
-        const SaleProductController = require('./controller/saleProductController');
-        const saleProduct = new SaleProductController();
-        const newSaleProduct = await saleProduct.getSalePorduct();
-        await saleProduct.create(newSaleProduct,function(res){
-            console.log(res);
-        });
+        // const SaleProductController = require('./controller/saleProductController');
+        // const saleProduct = new SaleProductController();
+        // const newSaleProduct = await saleProduct.getSalePorduct();
+        // await saleProduct.create(newSaleProduct,function(res){
+        //     console.log(res);
+        // });
 
     }
 

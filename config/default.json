@@ -3,9 +3,9 @@
         "database":{
             "host": "127.0.0.1",
             "port": 3306,
-            "dbName": "dbcastminas",
-            "user": "castadmin",
-            "password": "teste123"
+            "dbName": "gerente",
+            "user": "root",
+            "password": "root"
         },
         "SECRET":{
             "keyAcs":"c@5tm1n@s2023"            

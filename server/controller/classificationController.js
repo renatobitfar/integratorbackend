@@ -1,10 +1,14 @@
 var Request = require('tedious').Request;
 var TYPES = require('tedious').TYPES;
 const msdb = require('../infra/azureDb');
+const database = require('../infra/database');
 
 module.exports = class CategoryController {
 
     async getClassifications() {
+        // Busca ultimo id 
+        const lastId = await database.query("SELECT * FROM grupo");
+        console.log(lastId);
         return [
             {
                 id: 1,
@@ -28,7 +32,7 @@ module.exports = class CategoryController {
                     // optional BulkLoad options
                     const options = { keepNulls: true };
                     const table = '[dbo].[classificacoes]';
-        
+
                     // instantiate - provide the table where you'll be inserting to, options and a callback
                     const bulkLoad = msdb.newBulkLoad(table, options, function (err, rowCount) {
                         if (err) {
@@ -38,17 +42,17 @@ module.exports = class CategoryController {
                         console.log('DONE!');
                         msdb.close()
                     });
-        
+
                     // setup your columns - always indicate whether the column is nullable
                     bulkLoad.addColumn('id', TYPES.Int, { nullable: false });
                     bulkLoad.addColumn('nome', TYPES.NVarChar, { length: 100, nullable: false });
                     bulkLoad.addColumn('descricao', TYPES.NText, { nullable: true });
-        
+
                     // execute
                     msdb.execBulkLoad(bulkLoad, classification);
                 }
             });
-        
+
             msdb.connect();
         } catch (error) {
             console.error(error);

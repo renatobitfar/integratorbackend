@@ -21,6 +21,8 @@ var connection = new Connection(configDB);
 
 module.exports = connection;
 
+
+
 // connection.on('connect', function (err) {
 //     // If no error, then good to proceed.
 //     console.log("Connected");
