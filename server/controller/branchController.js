@@ -1,25 +1,36 @@
 var Request = require('tedious').Request;
 var TYPES = require('tedious').TYPES;
-const msdb = require('../infra/azureDb');
+const database = require('../infra/database');
+const msdbCon = require('../infra/azureDb');
+const { QueryTypes } = require('sequelize');
 
 module.exports = class BranchController {
 
     async getBranch() {
-        return [
-            {
-                id: 1,
-                nome: 'Filial 1',
-                cnpj:'123.456.0001-01'
-            },
-            {
-                id: 2,
-                nome: 'Filial 2',
-                cnpj:'123.456.0001-02'
-            }
-        ]
+        var listBranchs = [];
+        const lastId = await this.getLastId().then(response => {
+            return response;
+        });
+        const query = `SELECT f.filial_id AS id,
+            f.nome AS nome,
+            f.cgc AS cnpj
+            FROM filial f WHERE filial_id > ${lastId};`
+        const list = await database.query(query, { type: QueryTypes.SELECT });
+        for (const item of list) {
+            listBranchs.push(
+                {
+                    id:item.id,
+                    nome:item.nome || '',
+                    cnpj:item.cnpj || ''
+                }
+            )
+        }
+        return listBranchs;
     }
 
     async create(stock, callback) {
+        var connection = new msdbCon();
+        var msdb = connection.getConnection();
         try {
             msdb.on("connect", function (errCon) {
                 if (errCon) {
@@ -53,5 +64,47 @@ module.exports = class BranchController {
         } catch (error) {
             console.error(error);
         }
+    }
+
+    async getLastId() {
+        var connection = new msdbCon();
+        var msdb = connection.getConnection();
+        return new Promise((resolve, reject) => {
+            var id = 0;
+            msdb.on("connect", async function (errCon) {
+                if (errCon) {
+                    console.error(errCon);
+                    reject(errCon);
+                } else {
+                    const sql = 'SELECT MAX(id) as id from dbo.filiais';
+
+                    const request = new Request(sql, (err) => {
+                        if (err) {
+                            console.error(err);
+                        }
+                        console.log('DONE! Closing Connection');
+                        msdb.close();
+                    });
+
+                    request.on('row', (columns) => {
+                        columns.forEach((column) => {
+                            if (column.value === null) {
+                                console.log('NULL');
+                            } else {
+                                console.log(column.value);
+                                id = column.value;
+                            }
+                        });
+                    });
+                    request.on('doneInProc', (rowCount) => {
+                        console.log(rowCount + ' rows returned');
+                        resolve(id);
+                    });
+
+                    msdb.execSql(request);
+                }
+            });
+            msdb.connect();
+        })
     }
 }

@@ -1,7 +1,7 @@
 var Request = require('tedious').Request;
 var TYPES = require('tedious').TYPES;
 const { QueryTypes } = require('sequelize');
-const msdb = require('../infra/azureDb');
+const msdbCon = require('../infra/azureDb');
 const database = require('../infra/database');
 
 module.exports = class CategoryController {
@@ -17,8 +17,8 @@ module.exports = class CategoryController {
             listCategory.push(
                 {
                     id:cat.grupo_id,
-                    Nome:cat.descricao,
-                    descricao:cat.lojas_leram2
+                    Nome:cat.descricao || '',
+                    descricao:cat.lojas_leram2 || ''
                 }
             )
         }
@@ -26,6 +26,8 @@ module.exports = class CategoryController {
     }
 
     async create(category) {
+        var connection = new msdbCon();
+        var msdb = connection.getConnection();
         try {
             msdb.on("connect", function (errCon) {
                 if (errCon) {
@@ -62,6 +64,8 @@ module.exports = class CategoryController {
     }
 
     async getLastId() {
+        var connection = new msdbCon();
+        var msdb = connection.getConnection();
         return new Promise((resolve, reject) => {
             var id = 0;
             msdb.on("connect", async function (errCon) {

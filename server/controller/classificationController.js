@@ -1,29 +1,35 @@
 var Request = require('tedious').Request;
 var TYPES = require('tedious').TYPES;
-const msdb = require('../infra/azureDb');
 const database = require('../infra/database');
+const msdbCon = require('../infra/azureDb');
+const { QueryTypes } = require('sequelize');
+
 
 module.exports = class CategoryController {
 
     async getClassifications() {
         // Busca ultimo id 
-        const lastId = await database.query("SELECT * FROM grupo");
-        console.log(lastId);
-        return [
-            {
-                id: 1,
-                nome: "Classificação 1",
-                descricao: "Descrição Classificação 1"
-            },
-            {
-                id: 2,
-                nome: "Classificação 2",
-                descricao: "Descrição Classificação 2"
-            }
-        ]
+        var listClassification = [];
+        const lastId = await this.getLastId().then(response => {
+            return response;
+        });
+        const query = `SELECT * FROM espec WHERE espec_id > ${lastId};`
+        const list = await database.query(query, { type: QueryTypes.SELECT });
+        for (const item of list) {
+            listClassification.push(
+                {
+                    id:item.espec_id,
+                    nome:item.descricao || '',
+                    descricao:item.descricao || ''
+                }
+            )
+        }
+        return listClassification;
     }
 
     async create(classification, callback) {
+        var connection = new msdbCon();
+        var msdb = connection.getConnection();
         try {
             msdb.on("connect", function (errCon) {
                 if (errCon) {
@@ -57,5 +63,47 @@ module.exports = class CategoryController {
         } catch (error) {
             console.error(error);
         }
+    }
+
+    async getLastId() {
+        var connection = new msdbCon();
+        var msdb = connection.getConnection();
+        return new Promise((resolve, reject) => {
+            var id = 0;
+            msdb.on("connect", async function (errCon) {
+                if (errCon) {
+                    console.error(errCon);
+                    reject(errCon);
+                } else {
+                    const sql = 'SELECT MAX(id) as id from dbo.classificacoes';
+
+                    const request = new Request(sql, (err) => {
+                        if (err) {
+                            console.error(err);
+                        }
+                        console.log('DONE! Closing Connection');
+                        msdb.close();
+                    });
+
+                    request.on('row', (columns) => {
+                        columns.forEach((column) => {
+                            if (column.value === null) {
+                                console.log('NULL');
+                            } else {
+                                console.log(column.value);
+                                id = column.value;
+                            }
+                        });
+                    });
+                    request.on('doneInProc', (rowCount) => {
+                        console.log(rowCount + ' rows returned');
+                        resolve(id);
+                    });
+
+                    msdb.execSql(request);
+                }
+            });
+            msdb.connect();
+        })
     }
 }

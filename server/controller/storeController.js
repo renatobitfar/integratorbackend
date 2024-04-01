@@ -1,35 +1,47 @@
 var Request = require('tedious').Request;
 var TYPES = require('tedious').TYPES;
-const msdb = require('../infra/azureDb');
+const database = require('../infra/database');
+const msdbCon = require('../infra/azureDb');
+const { QueryTypes } = require('sequelize');
 
 module.exports = class StoreController {
 
     async getStore() {
-        return [
-            {
-                id: 1,
-                nome:'Farmacia 1',
-                endereco:'Rua 1',
-                cidade: 'Cidade 1',
-                uf: 'MG',
-                cnpj: '123.123.0001/01',
-                bandeira: 'Bandeira 1',
-                associacao: 'Associação 1'
-            },
-            {
-                id: 2,
-                nome:'Farmacia 2',
-                endereco:'Rua 2',
-                cidade: 'Cidade 2',
-                uf: 'MG',
-                cnpj: '123.123.0001/02',
-                bandeira: 'Bandeira 2',
-                associacao: 'Associação 2'
-            }
-        ]
+        // Busca ultimo id 
+        var listStore = [];
+        const lastId = await this.getLastId().then(response => {
+            return response;
+        });
+        const query = `SELECT f.filial_id AS id,
+            f.nome AS nome,
+            f.ender AS endereco,
+            f.cidade AS cidade,
+            f.UF AS uf,
+            f.cgc AS cnpj,
+            f.nome_rede AS bandeira,
+            '?' AS associacao
+            FROM filial f WHERE filial_id > ${lastId};`
+        const list = await database.query(query, { type: QueryTypes.SELECT });
+        for (const item of list) {
+            listStore.push(
+                {
+                    id: item.id,
+                    nome:item.nome || '-',
+                    endereco:item.endereco || '-',
+                    cidade: item.cidade || '-',
+                    uf: item.uf || '-',
+                    cnpj: item.cnpj || '-',
+                    bandeira: item.bandeira || '-',
+                    associacao: item.associacao || '-'
+                }
+            )
+        }
+        return listStore;
     }
 
     async create(store, callback) {
+        var connection = new msdbCon();
+        var msdb = connection.getConnection();
         try {
             msdb.on("connect", function (errCon) {
                 if (errCon) {
@@ -69,5 +81,47 @@ module.exports = class StoreController {
         } catch (error) {
             console.error(error);
         }
+    }
+
+    async getLastId() {
+        var connection = new msdbCon();
+        var msdb = connection.getConnection();
+        return new Promise((resolve, reject) => {
+            var id = 0;
+            msdb.on("connect", async function (errCon) {
+                if (errCon) {
+                    console.error(errCon);
+                    reject(errCon);
+                } else {
+                    const sql = 'SELECT MAX(id) as id from dbo.lojas';
+
+                    const request = new Request(sql, (err) => {
+                        if (err) {
+                            console.error(err);
+                        }
+                        console.log('DONE! Closing Connection');
+                        msdb.close();
+                    });
+
+                    request.on('row', (columns) => {
+                        columns.forEach((column) => {
+                            if (column.value === null) {
+                                console.log('NULL');
+                            } else {
+                                console.log(column.value);
+                                id = column.value;
+                            }
+                        });
+                    });
+                    request.on('doneInProc', (rowCount) => {
+                        console.log(rowCount + ' rows returned');
+                        resolve(id);
+                    });
+
+                    msdb.execSql(request);
+                }
+            });
+            msdb.connect();
+        })
     }
 }
